@@ -189,6 +189,7 @@ module DearImGui.Raw
   , treePush
   , treePop
   , setNextItemOpen
+  , collapsingHeader
 
     -- ** Selectables
   , selectable
@@ -1237,11 +1238,15 @@ treePop :: (MonadIO m) => m ()
 treePop = liftIO do
   [C.exp| void { TreePop() } |]
 
-
 -- | Wraps @ImGui::SetNextItemOpen()@.
 setNextItemOpen :: (MonadIO m) => CBool -> m ()
 setNextItemOpen is_open = liftIO do
   [C.exp| void { SetNextItemOpen($(bool is_open)) } |]
+
+-- | Wraps @ImGui::CollapsingHeader()@.
+collapsingHeader :: (MonadIO m) => CString -> ImGuiTreeNodeFlags -> m Bool
+collapsingHeader labelPtr flags = liftIO do
+  (0 /=) <$> [C.exp| bool { CollapsingHeader($(char* labelPtr), $(ImGuiTreeNodeFlags flags)) } |]
 
 -- -- | Wraps @ImGui::Selectable()@.
 -- selectable :: (MonadIO m) => CString -> m Bool

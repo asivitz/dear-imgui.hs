@@ -229,6 +229,7 @@ module DearImGui
   , treePush
   , Raw.treePop
   , setNextItemOpen
+  , withCollapsingHeaderOpen
 
     -- ** Selectables
   , selectable
@@ -1578,6 +1579,11 @@ treePush label = liftIO do
 -- | Wraps @ImGui::SetNextItemOpen()@.
 setNextItemOpen :: MonadIO m => Bool -> m ()
 setNextItemOpen is_open = Raw.setNextItemOpen (bool 0 1 is_open)
+
+withCollapsingHeaderOpen :: MonadUnliftIO m => Text -> ImGuiTreeNodeFlags -> m () -> m ()
+withCollapsingHeaderOpen label flags action =
+  Text.withCString label \labelPtr ->
+    Raw.collapsingHeader labelPtr flags >>= flip when action
 
 -- | Wraps @ImGui::Selectable()@ with default options.
 selectable :: MonadIO m => Text -> m Bool
