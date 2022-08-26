@@ -178,6 +178,8 @@ module DearImGui
   , inputTextWithHint
 
     -- ** Color Editor/Picker
+  , colorEdit3
+  , colorEdit4
   , colorPicker3
   , colorButton
 
@@ -1280,6 +1282,34 @@ withInputString ref bufSize action = liftIO do
         max refSize bufSize +
         5 -- XXX: max size of UTF8 code point + NUL terminator
 
+
+-- | Wraps @ImGui::ColorEdit3()@.
+colorEdit3 :: (MonadIO m, HasSetter ref ImVec3, HasGetter ref ImVec3) => Text -> ref -> m Bool
+colorEdit3 desc ref = liftIO do
+  ImVec3{x, y, z} <- get ref
+  withArray (realToFrac <$> [x, y, z]) \refPtr -> do
+    changed <- Text.withCString desc \descPtr ->
+      Raw.colorEdit3 descPtr refPtr
+
+    when changed do
+      [x', y', z'] <- peekArray 3 refPtr
+      ref $=! ImVec3 (realToFrac x') (realToFrac y') (realToFrac z')
+
+    return changed
+
+-- | Wraps @ImGui::ColorEdit4()@.
+colorEdit4 :: (MonadIO m, HasSetter ref ImVec4, HasGetter ref ImVec4) => Text -> ref -> m Bool
+colorEdit4 desc ref = liftIO do
+  ImVec4{x, y, z, w} <- get ref
+  withArray (realToFrac <$> [x, y, z, w]) \refPtr -> do
+    changed <- Text.withCString desc \descPtr ->
+      Raw.colorEdit4 descPtr refPtr
+
+    when changed do
+      [x', y', z', w'] <- peekArray 4 refPtr
+      ref $=! ImVec4 (realToFrac x') (realToFrac y') (realToFrac z') (realToFrac w')
+
+    return changed
 
 -- | Wraps @ImGui::ColorPicker3()@.
 colorPicker3 :: (MonadIO m, HasSetter ref ImVec3, HasGetter ref ImVec3) => Text -> ref -> m Bool
