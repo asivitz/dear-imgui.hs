@@ -158,6 +158,8 @@ module DearImGui.Raw
   , inputTextWithHint
 
     -- * Color Editor/Picker
+  , colorEdit3
+  , colorEdit4
   , colorPicker3
   , colorButton
 
@@ -1084,6 +1086,15 @@ inputTextWithHint labelPtr hintPtr (bufPtr, fromIntegral -> bufSize) flags = lif
     }
   |]
 
+-- | Wraps @ImGui::ColorEdit3()@.
+colorEdit3 :: (MonadIO m) => CString -> Ptr CFloat -> m Bool
+colorEdit3 descPtr refPtr = liftIO do
+  (0 /= ) <$> [C.exp| bool { ColorEdit3( $(char* descPtr), $(float* refPtr) ) } |]
+
+-- | Wraps @ImGui::ColorEdit4()@.
+colorEdit4 :: (MonadIO m) => CString -> Ptr CFloat -> m Bool
+colorEdit4 descPtr refPtr = liftIO do
+  (0 /= ) <$> [C.exp| bool { ColorEdit4( $(char* descPtr), $(float* refPtr) ) } |]
 
 -- | Wraps @ImGui::ColorPicker3()@.
 colorPicker3 :: (MonadIO m) => CString -> Ptr CFloat -> m Bool
