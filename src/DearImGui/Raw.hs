@@ -9,6 +9,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-|
 Module: DearImGui
@@ -188,6 +189,7 @@ module DearImGui.Raw
 
     -- * Trees
   , treeNode
+  , treeNodeEx
   , treePush
   , treePop
   , setNextItemOpen
@@ -220,6 +222,14 @@ module DearImGui.Raw
   , tabItemButton
   , setTabItemClosed
 
+    -- ** Drag/Drop
+  , beginDragDropSource
+  , endDragDropSource
+  , setDragDropPayload
+  , beginDragDropTarget
+  , endDragDropTarget
+  , acceptDragDropPayload
+
     -- * Tooltips
   , beginTooltip
   , endTooltip
@@ -245,6 +255,7 @@ module DearImGui.Raw
 
     -- * Item/Widgets Utilities
   , isItemHovered
+  , isItemClicked
   , wantCaptureMouse
   , wantCaptureKeyboard
 
@@ -267,6 +278,7 @@ import Control.Monad.IO.Class
   ( MonadIO, liftIO )
 import Foreign
 import Foreign.C
+import Foreign.Storable (sizeOf)
 import System.IO.Unsafe
   ( unsafePerformIO )
 
@@ -1237,6 +1249,10 @@ treeNode :: (MonadIO m) => CString -> m Bool
 treeNode labelPtr = liftIO do
   (0 /=) <$> [C.exp| bool { TreeNode($(char* labelPtr)) } |]
 
+-- | Wraps @ImGui::TreeNodeEx()@.
+treeNodeEx :: (MonadIO m) => CString -> ImGuiTreeNodeFlags -> m Bool
+treeNodeEx labelPtr flags = liftIO do
+  (0 /=) <$> [C.exp| bool { TreeNodeEx($(char* labelPtr), $(ImGuiTreeNodeFlags flags)) } |]
 
 -- | Wraps @ImGui::TreePush()@.
 treePush :: (MonadIO m) => CString -> m ()
@@ -1394,6 +1410,42 @@ setTabItemClosed :: (MonadIO m) => CString -> m ()
 setTabItemClosed namePtr = liftIO do
   [C.exp| void { SetTabItemClosed($(char* namePtr)); } |]
 
+-- | Drag/Drop
+beginDragDropSource :: MonadIO m => m Bool
+beginDragDropSource = liftIO do
+  (0 /=) <$> [C.exp| bool { BeginDragDropSource(0) } |]
+
+endDragDropSource :: MonadIO m => m ()
+endDragDropSource = liftIO do
+  [C.exp| void { EndDragDropSource(); } |]
+
+setDragDropPayload :: forall a m. (Storable a, MonadIO m) => CString -> Ptr a -> m Bool
+setDragDropPayload typePtr dataPtr = liftIO do
+  (0 /=) <$> [C.exp| bool { SetDragDropPayload($(char* typePtr), $(void* ptr), $(size_t sz)) } |]
+  where
+  sz = fromIntegral $ sizeOf(undefined :: a)
+  ptr = castPtr dataPtr
+
+beginDragDropTarget :: MonadIO m => m Bool
+beginDragDropTarget = liftIO do
+  (0 /=) <$> [C.exp| bool { BeginDragDropTarget() } |]
+
+endDragDropTarget :: MonadIO m => m ()
+endDragDropTarget = liftIO do
+  [C.exp| void { EndDragDropTarget(); } |]
+
+acceptDragDropPayload :: MonadIO m => CString -> m (Ptr ())
+acceptDragDropPayload typePtr = liftIO do
+  [C.block|
+    void* {
+      const ImGuiPayload* payload = AcceptDragDropPayload($(char* typePtr));
+      if (payload)
+      {
+        return payload->Data;
+      }
+      return NULL;
+    }
+  |]
 
 -- | Begin/append a tooltip window to create full-featured tooltip (with any
 -- kind of items).
@@ -1496,6 +1548,11 @@ isPopupOpen popupIdPtr flags = liftIO do
 isItemHovered :: (MonadIO m) => m Bool
 isItemHovered = liftIO do
   (0 /=) <$> [C.exp| bool { IsItemHovered() } |]
+
+-- Wraps @ImGui::IsItemClicked()@
+isItemClicked :: (MonadIO m) => m Bool
+isItemClicked = liftIO do
+  (0 /=) <$> [C.exp| bool { IsItemClicked() } |]
 
 
 -- | Get draw list associated to the current window.

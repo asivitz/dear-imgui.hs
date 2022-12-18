@@ -228,6 +228,7 @@ module DearImGui
 
     -- ** Trees
   , treeNode
+  , treeNodeWith
   , treePush
   , Raw.treePop
   , setNextItemOpen
@@ -276,6 +277,12 @@ module DearImGui
   , Raw.endTabItem
   , tabItemButton
   , setTabItemClosed
+
+    -- ** Drag/Drop
+  , withDragDropSource
+  , withDragDropTarget
+  , setDragDropPayload
+  , acceptDragDropPayload
 
     -- ** Tooltips
   , withTooltip
@@ -330,6 +337,7 @@ module DearImGui
 
     -- * Item/Widgets Utilities
   , Raw.isItemHovered
+  , Raw.isItemClicked
   , Raw.wantCaptureMouse
   , Raw.wantCaptureKeyboard
 
@@ -1600,6 +1608,10 @@ treeNode :: MonadIO m => Text -> m Bool
 treeNode label = liftIO do
   Text.withCString label Raw.treeNode
 
+-- | Wraps @ImGui::TreeNodeEx()@.
+treeNodeWith :: MonadIO m => Text -> ImGuiTreeNodeFlags -> m Bool
+treeNodeWith label flags = liftIO do
+  Text.withCString label (flip Raw.treeNodeEx flags)
 
 -- | Wraps @ImGui::TreePush()@.
 treePush :: MonadIO m => Text -> m ()
@@ -1796,6 +1808,25 @@ tabItemButton tabName flags = liftIO do
 setTabItemClosed :: MonadIO m => Text -> m ()
 setTabItemClosed tabName = liftIO do
   Text.withCString tabName Raw.setTabItemClosed
+
+-- | DragDrop
+withDragDropSource :: MonadUnliftIO m => m () -> m ()
+withDragDropSource = bracket Raw.beginDragDropSource (`when` Raw.endDragDropSource) . flip when
+
+setDragDropPayload typ dat = do
+  Text.withCString typ \typPtr ->
+    with dat \datPtr ->
+      Raw.setDragDropPayload typPtr datPtr
+
+withDragDropTarget :: MonadUnliftIO m => m () -> m ()
+withDragDropTarget = bracket Raw.beginDragDropTarget (`when` Raw.endDragDropTarget) . flip when
+
+acceptDragDropPayload :: (Storable a, MonadIO m) => Text -> m (Maybe a)
+acceptDragDropPayload typ = liftIO do
+  Text.withCString typ \typPtr -> do
+    Raw.acceptDragDropPayload typPtr >>= \case
+      datPtr | datPtr == nullPtr -> pure Nothing
+      datPtr -> fmap Just . peek . castPtr $ datPtr
 
 -- | Create a tooltip.
 --
