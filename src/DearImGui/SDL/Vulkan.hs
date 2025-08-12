@@ -13,7 +13,7 @@ Initialising the Vulkan backend for Dear ImGui using SDL2.
 -}
 
 module DearImGui.SDL.Vulkan
-  ( sdl2InitForVulkan )
+  ( sdl2InitForVulkan, sdl3InitForVulkan )
   where
 
 -- inline-c
@@ -34,6 +34,7 @@ C.context Cpp.cppCtx
 C.include "imgui.h"
 C.include "backends/imgui_impl_vulkan.h"
 C.include "backends/imgui_impl_sdl2.h"
+C.include "backends/imgui_impl_sdl3.h"
 C.include "SDL.h"
 C.include "SDL_vulkan.h"
 Cpp.using "namespace ImGui"
@@ -43,3 +44,8 @@ Cpp.using "namespace ImGui"
 sdl2InitForVulkan :: MonadIO m => Window -> m Bool
 sdl2InitForVulkan (Window windowPtr) = liftIO do
   ( 0 /= ) <$> [C.exp| bool { ImGui_ImplSDL2_InitForVulkan((SDL_Window*)$(void* windowPtr)) } |]
+
+-- | Wraps @ImGui_ImplSDL3_InitForVulkan@.
+sdl3InitForVulkan :: MonadIO m => Window -> m Bool
+sdl3InitForVulkan (Window windowPtr) = liftIO do
+  ( 0 /= ) <$> [C.exp| bool { ImGui_ImplSDL3_InitForVulkan((SDL_Window*)$(void* windowPtr)) } |]
