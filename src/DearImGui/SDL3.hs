@@ -41,8 +41,8 @@ import qualified Language.C.Inline as C
 import qualified Language.C.Inline.Cpp as Cpp
 
 -- sdl3
-import SDL
-import SDL.Events
+import SDL3
+import SDL3.Events
 
 -- transformers
 import Control.Monad.IO.Class
