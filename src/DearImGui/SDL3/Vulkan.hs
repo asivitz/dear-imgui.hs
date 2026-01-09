@@ -20,7 +20,7 @@ import qualified Language.C.Inline as C
 import qualified Language.C.Inline.Cpp as Cpp
 
 -- sdl3
-import SDL.Video
+import SDL3.Video
   ( SDLWindow(..) )
 
 -- transformers
